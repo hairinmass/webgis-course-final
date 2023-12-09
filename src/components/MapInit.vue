@@ -52,17 +52,27 @@ import 'mapbox-gl/dist/mapbox-gl.css'
         })
     }
 
-    const deleteOne = () => {
-        console.log('delete thisd')
-        fetch(`http://localhost:3000/deleteCW/${data.name}`, {
+    const deleteOne = async () => {
+        await fetch(`http://localhost:3000/deleteCW/${data.name}`, {
             method: 'DELETE',
         })
         data.modelDisplay = false
+        const markerToDel = markers.find(marker => {
+            return Math.abs(Number(marker.getLngLat().lng) - Number(data.LngLat[0])) < 1e-9
+        })
+        
+        console.log(markerToDel)
+        if(markerToDel) {
+            markerToDel.remove()
+            markers = markers.filter(marker => marker !== markerToDel)
+        }
     }
 
     const { initMap } = useMap()
     const { getData } = useMarkers()
-    
+
+    let markers = []
+
     onMounted(async () => {
         const map = await initMap()
         const resData = await getData('http://localhost:3000/citywalk?')
@@ -71,12 +81,15 @@ import 'mapbox-gl/dist/mapbox-gl.css'
             const marker = new mapboxgl.Marker()
                 .setLngLat(item.coords)
                 .addTo(map)
+
+            markers.push(marker)
+            console.log(markers)
+
             marker.getElement().addEventListener('click', () => {
                 data.modelDisplay = true
                 data.name = item.name
                 data.LngLat = item.coords
                 data.location = item.address
-                console.log(item.address)
                 data.description = item.description
             })
         })
